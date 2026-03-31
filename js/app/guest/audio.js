@@ -8,10 +8,10 @@ export const audio = (() => {
     const statePause = '<i class="fa-solid fa-circle-play"></i>';
 
     /**
-     * @param {boolean} [playOnOpen=true]
+     * @param {boolean} [playOnOpen=false]
      * @returns {Promise<void>}
      */
-    const load = async (playOnOpen = true) => {
+    const load = async (playOnOpen = false) => {
 
         const url = document.body.getAttribute('data-audio');
         if (!url) {
@@ -71,6 +71,7 @@ export const audio = (() => {
 
         document.addEventListener('undangan.open', () => {
             music.classList.remove('d-none');
+            music.innerHTML = statePause;
 
             if (playOnOpen) {
                 play();
