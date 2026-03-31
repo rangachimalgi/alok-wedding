@@ -324,12 +324,8 @@ export const guest = (() => {
         offline.init();
         progress.init();
 
-        const commentSection = document.getElementById('comment');
-        if (commentSection) {
-            comment.init();
-        } else {
-            document.querySelector('a.nav-link[href="#comment"]')?.closest('li.nav-item')?.remove();
-        }
+        document.getElementById('comment')?.remove();
+        document.querySelector('a.nav-link[href="#comment"]')?.closest('li.nav-item')?.remove();
 
         config = storage('config');
         information = storage('information');
@@ -359,14 +355,9 @@ export const guest = (() => {
         }
 
         if (token && token.length > 0) {
-            // add 2 progress for config and comment.
+            // add progress for config.
             // before img.load();
             progress.add();
-            progress.add();
-
-            if (!commentSection) {
-                progress.complete('comment');
-            }
 
             // if don't have data-src.
             if (!img.hasDataSrc()) {
@@ -384,12 +375,6 @@ export const guest = (() => {
                 vid.load();
                 aud.load();
                 lib.load({ confetti: data.is_confetti_animation });
-
-                if (commentSection) {
-                    comment.show()
-                        .then(() => progress.complete('comment'))
-                        .catch(() => progress.invalid('comment'));
-                }
 
             }).catch(() => progress.invalid('config'));
         }
