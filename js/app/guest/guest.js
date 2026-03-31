@@ -255,7 +255,7 @@ export const guest = (() => {
         const url = new URL('https://calendar.google.com/calendar/render');
         const data = new URLSearchParams({
             action: 'TEMPLATE',
-            text: 'The Wedding of Wahyu and Riski',
+            text: 'The Wedding of Alok and Medha',
             dates: `${formatDate('2023-03-15 10:00')}/${formatDate('2023-03-15 11:00')}`,
             details: 'Tanpa mengurangi rasa hormat, kami mengundang Anda untuk berkenan menghadiri acara pernikahan kami. Terima kasih atas perhatian dan doa restu Anda, yang menjadi kebahagiaan serta kehormatan besar bagi kami.',
             location: 'RT 10 RW 02, Desa Pajerukan, Kec. Kalibagor, Kab. Banyumas, Jawa Tengah 53191.',
@@ -299,7 +299,10 @@ export const guest = (() => {
         buildGoogleCalendar();
 
         if (information.has('presence')) {
-            document.getElementById('form-presence').value = information.get('presence') ? '1' : '2';
+            const presence = document.getElementById('form-presence');
+            if (presence) {
+                presence.value = information.get('presence') ? '1' : '2';
+            }
         }
 
         if (information.get('info')) {
@@ -319,8 +322,14 @@ export const guest = (() => {
     const pageLoaded = () => {
         lang.init();
         offline.init();
-        comment.init();
         progress.init();
+
+        const commentSection = document.getElementById('comment');
+        if (commentSection) {
+            comment.init();
+        } else {
+            document.querySelector('a.nav-link[href="#comment"]')?.closest('li.nav-item')?.remove();
+        }
 
         config = storage('config');
         information = storage('information');
@@ -355,6 +364,10 @@ export const guest = (() => {
             progress.add();
             progress.add();
 
+            if (!commentSection) {
+                progress.complete('comment');
+            }
+
             // if don't have data-src.
             if (!img.hasDataSrc()) {
                 img.load();
@@ -372,9 +385,11 @@ export const guest = (() => {
                 aud.load();
                 lib.load({ confetti: data.is_confetti_animation });
 
-                comment.show()
-                    .then(() => progress.complete('comment'))
-                    .catch(() => progress.invalid('comment'));
+                if (commentSection) {
+                    comment.show()
+                        .then(() => progress.complete('comment'))
+                        .catch(() => progress.invalid('comment'));
+                }
 
             }).catch(() => progress.invalid('config'));
         }
