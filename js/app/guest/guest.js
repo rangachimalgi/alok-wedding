@@ -334,7 +334,6 @@ export const guest = (() => {
         const img = image.init();
         const aud = audio.init();
         const lib = loaderLibs();
-        const token = document.body.getAttribute('data-key');
         const params = new URLSearchParams(window.location.search);
 
         window.addEventListener('resize', util.debounce(slide));
@@ -344,40 +343,16 @@ export const guest = (() => {
             img.download(e.currentTarget.getAttribute('data-src'));
         });
 
-        if (!token || token.length <= 0) {
-            document.getElementById('comment')?.remove();
-            document.querySelector('a.nav-link[href="#comment"]')?.closest('li.nav-item')?.remove();
+        document.getElementById('comment')?.remove();
+        document.querySelector('a.nav-link[href="#comment"]')?.closest('li.nav-item')?.remove();
 
-            vid.load();
-            img.load();
-            aud.load();
-            lib.load({ confetti: document.body.getAttribute('data-confetti') === 'true' });
-        }
-
-        if (token && token.length > 0) {
-            // add progress for config.
-            // before img.load();
-            progress.add();
-
-            // if don't have data-src.
-            if (!img.hasDataSrc()) {
-                img.load();
-            }
-
-            session.guest(params.get('k') ?? token).then(({ data }) => {
-                document.dispatchEvent(new Event('undangan.session'));
-                progress.complete('config');
-
-                if (img.hasDataSrc()) {
-                    img.load();
-                }
-
-                vid.load();
-                aud.load();
-                lib.load({ confetti: data.is_confetti_animation });
-
-            }).catch(() => progress.invalid('config'));
-        }
+        // Comments are disabled, so skip remote session/config fetch
+        // to avoid boot screen blocking on network/API.
+        void params; // keep URL parsing behavior unchanged for guest name, etc.
+        vid.load();
+        img.load();
+        aud.load();
+        lib.load({ confetti: document.body.getAttribute('data-confetti') === 'true' });
     };
 
     /**
