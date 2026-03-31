@@ -34,27 +34,31 @@ export const image = (() => {
      * @param {string} src 
      * @returns {Promise<void>}
      */
-    const appendImage = (el, src) => loadedImage(src).then((img) => {
+    const appendImage = (el, src, withProgress) => loadedImage(src).then((img) => {
         el.width = img.naturalWidth;
         el.height = img.naturalHeight;
         el.classList.remove('opacity-0');
         el.src = img.src;
         img.remove();
 
-        progress.complete('image');
+        if (withProgress) {
+            progress.complete('image');
+        }
     });
 
     /**
      * @param {HTMLImageElement} el 
      * @returns {void}
      */
-    const getByFetch = (el) => {
+    const getByFetch = (el, withProgress) => {
         urlCache.push({
             url: el.getAttribute('data-src'),
-            res: (url) => appendImage(el, url),
+            res: (url) => appendImage(el, url, withProgress),
             rej: (err) => {
                 console.error(err);
-                progress.invalid('image');
+                if (withProgress) {
+                    progress.invalid('image');
+                }
             },
         });
     };
@@ -63,18 +67,28 @@ export const image = (() => {
      * @param {HTMLImageElement} el 
      * @returns {void}
      */
-    const getByDefault = (el) => {
-        el.onerror = () => progress.invalid('image');
+    const getByDefault = (el, withProgress) => {
+        el.onerror = () => {
+            if (withProgress) {
+                progress.invalid('image');
+            }
+        };
         el.onload = () => {
             el.width = el.naturalWidth;
             el.height = el.naturalHeight;
-            progress.complete('image');
+            if (withProgress) {
+                progress.complete('image');
+            }
         };
 
         if (el.complete && el.naturalWidth !== 0 && el.naturalHeight !== 0) {
-            progress.complete('image');
+            if (withProgress) {
+                progress.complete('image');
+            }
         } else if (el.complete) {
-            progress.invalid('image');
+            if (withProgress) {
+                progress.invalid('image');
+            }
         }
     };
 
@@ -93,14 +107,17 @@ export const image = (() => {
          * @param {function} filter 
          * @returns {Promise<void>}
          */
-        const runGroup = async (filter) => {
+        const runGroup = async (filter, withProgress) => {
             urlCache.length = 0;
-            imgs.filter(filter).forEach((el) => el.hasAttribute('data-src') ? getByFetch(el) : getByDefault(el));
+            imgs.filter(filter).forEach((el) => el.hasAttribute('data-src') ? getByFetch(el, withProgress) : getByDefault(el, withProgress));
             await c.run(urlCache, progress.getAbort());
         };
 
-        await runGroup((el) => el.hasAttribute('fetchpriority'));
-        await runGroup((el) => !el.hasAttribute('fetchpriority'));
+        // First paint: only critical images are part of loading progress.
+        await runGroup((el) => el.hasAttribute('fetchpriority'), true);
+
+        // Defer non-critical images so the invitation opens faster.
+        runGroup((el) => !el.hasAttribute('fetchpriority'), false).catch((err) => console.error(err));
     };
 
     /**
@@ -117,7 +134,11 @@ export const image = (() => {
     const init = () => {
         c = cache('image').withForceCache();
         images = document.querySelectorAll('img');
-        images.forEach(progress.add);
+        images.forEach((img) => {
+            if (img.hasAttribute('fetchpriority')) {
+                progress.add();
+            }
+        });
 
         return {
             load,

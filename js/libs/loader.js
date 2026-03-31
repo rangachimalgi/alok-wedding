@@ -110,7 +110,8 @@ export const loader = (opt = {}) => {
     }
 
     if (opt?.additionalFont ?? true) {
-        promises.push(loadAdditionalFont(c));
+        // Do not block first render on extra font downloads.
+        loadAdditionalFont(c).catch((err) => console.error(err));
     }
 
     return Promise.all(promises);
